@@ -272,8 +272,8 @@ C++使用非常严格的类型检查。在函数被调用前，必须要知道�
                   // return 1;
   }
 
-2.5.4：函数重载
-```````````````
+_`2.5.4：函数重载`
+``````````````````
 
 C++中可以定义相同名称的函数，但却执行不同的动作。这些函数的参数列表必须不一样（并且/或者它们的const属性）。示例如下：
 
@@ -318,7 +318,180 @@ C++编译器采用简单的方式实现函数重载。尽管函数共享它们�
 
 并未提供printf函数的返回值信息。两个只有返回值不同的printf函数对于编译器来说并无区别。
 
-* 第7章
+* 第 `7 <chapter-7.rst#classes>`_ 章，将会引入成员函数的概念( `7.7 <chapter-7.rst#constfunctions>`_ 节)。这里仅简单的提及，类通常有成员函数（见第 `5 <chatper-5.rst#string>`_ 章中中概念介绍）。除了能够使用不同的参数列表重载成员函数，还可以通过const属性重载成员函数。这种抢矿下，类可能有一对名称和参数列表完全相同的成员函数。此时，这些函数通过const属性重载。这种情况。这些函数中，必须有一个函数有const属性。
+
+
+2.5.5：默认函数参数
+```````````````````
+
+C++中，定义函数时可以给函数提供默认参数。当开发者没有提供参数时，编译器会提供默认参数。例如：
+
+::
+
+  #include <stdio.h>
+
+  void showstring(char *str = "Hello World!\n");
+
+  int main()
+  {
+      showstring("Here's an explicit argument.\n");
+
+      showstring();           // in fact this says:
+                              // showstring("Hello World!\n");
+  } 
+
+在省略参数时，默认参数会被定义是一个很好的点：编译器提供趋势的参数，除非函数调用时明确指定。当默认参数被使用时，程序代码既不会变得更短，程序也不会变得更高效。
+
+定义函数时，可以定义多个默认参数：
+
+::
+
+  void two_ints(int a = 1, int b = 4);
+
+  int main()
+  {
+      two_ints();            // arguments:  1, 4
+      two_ints(20);          // arguments: 20, 4
+      two_ints(20, 5);       // arguments: 20, 5
+  }
+
+当函数two_ints被调用时，必要时，编译器会提供一个或两个参数。但想这样的语句two_ints(,6)是不允许的：当参数省略时，它们必须在右侧。
+
+默认参数必须要在编译时是已知的，就是在那时提供的默认参数。因此，默认参数必须在函数声明时就给出，而不是在实现的时候。
+
+::
+
+  // sample header file
+  extern void two_ints(int a = 1, int b = 4);
+
+  // code of function in, say, two.cc
+  void two_ints(int a, int b)
+  {
+      ...
+  }
+
+在函数定义时提供默认参数是错误的。当函数被其他源文件使用时，编译器读取头文件，而不是函数的定义。所以编译器无法得知默认参数的值。当前，如果编译器检测到在函数定义是提供默认参数会报错。
+
+2.5.6：NULL指针、0指针和nullptr
+```````````````````````````````
+
+在C++中，所有的零值都编码为0。在C中，NULL通常在指针的上下文中使用。这种差异纯粹是文体上的，尽管被广泛采用。C++中应该避免使用NULL指针（因为它是一个宏，应该避免在C++中使用宏，见 `8.1.4 <chapter-8.rst#genconst>`_ ）。相比，基本可以总是使用0。
+
+几乎是总是，但并不是一直都是。因为C++允许函数重载（ `2.5.4`_ 节）。开发者可能会面对意外的函数选择，如下面的情况下：
+
+::
+
+  #include <stdio.h>
+
+  void show(int val)
+  {
+      printf("Integer: %d\n", val);
+  }
+
+  void show(double val)
+  {
+      printf("Double: %lf\n", val);
+  }
+
+  void show(char const *val)
+  {
+      printf("String: %s\n", val);
+  }
+
+  int main()
+  {
+      show(12);
+      show(3.1415);
+      show("Hello World!\n");
+  }
+
+这种情况下，开发者打算调用show(char const \*)，设计上可能调用了show(0)
+。但是这不起作用，因为0被解析为int，所以show(int)被调用。调用show(NULL)同样也不起作用，因为C++定义NULL为0，而不是((void \*)0)。所以还是会调用show(int)。要解决此类问题，C++标准引入了nullptr关键字来代表0指针。在这个例子中，开发者应该调用show(nullptr)来避免选择错误的函数。nullptr同样可以用来初始化指针变量，如：
+
+;;
+
+  int *ip = nullptr;      // OK
+  int value = nullptr;    // error: value is no pointer
+
+2.5.7：void参数列表
+```````````````````
+在C中，一个没有参数的函数原型，如
+
+::
+
+  void func();
+
+意为改函数的的参数列表是不是原型：对于这样的函数原型，编译器不会检查调用时所传递的参数。在C中，void关键字用来明确说明函数没有参数，如
+
+::
+
+  void func(void);
+
+因为C++强制进行语法检查，在C++中，空的参数列表表明没有参数，因此可以省略void关键字。
+
+2.5.8：#define __cplusplus
+``````````````````````````
+
+每个遵循ANSI/ISO标准的编译器都会定义__cplusplus符号：就好像每个源文件都事先都通过#define __cplusplus制定定了这个符号。
+
+接下来的几节，我们将会看到这个符号的使用例子。
+
+2.5.9：使用标准C函数
+````````````````````
+
+普通C函数，在编译或者运行时库中的函数，都可以在C++程序中使用。但是，这些函数必须声明为C函数。
+
+作为示例，下面的代码段声明了一个C的xmalloc函数：
+
+::
+
+  extern "C" void *xmalloc(int size);
+
+这个声明和C中的声明类似，除了原型之前的extern "C"前缀。
+
+一个声明C函数稍微不同的方式如下：
+
+::
+
+  extern "C"
+  {
+      // C-declarations go in here
+  }
+
+同样也可以在声明中添加预处理指令，例如，一个C头文件myheader.h的包含，其中声明的C函数可以被C++源文件包含：
+
+::
+
+  extern "C"
+  {
+      #include <myheader.h>
+  }
+
+尽管两种方式都可以使用，但是在C++源文件中很少会遇到。一个比较常用的声明外部C函数的方法将会在下节介绍。
+
+2.5.10：对C和C++都适用的头文件
+``````````````````````````````
+
+预定义的_cplusplus符号可以定义外部的C函数结合起来提供了创建C和C++都适用的头文件的能力。这样的头文件可能会声明一组C和C++都可以使用的函数。
+
+这样的头文件初始化如下：
+
+::
+
+    #ifdef __cplusplus
+    extern "C"
+    {
+    #endif
+
+        /* declaration of C-data and functions are inserted here. E.g., */
+        void *xmalloc(int size);
+
+    #ifdef __cplusplus
+    }
+    #endif
+
+用这种方式初始化，一个普通的C头文件用extern "C" {}包含起来。{出现在最开始，}出现在文件的底部。#ifdef指令检测结合的类型：C或C++。标准的C头文件，例如stdio.h內建这种方式，因此可以被C和C++使用。
+
 
 
 _`2.5.14`
