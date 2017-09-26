@@ -408,7 +408,7 @@ C++中，定义函数时可以给函数提供默认参数。当开发者没有�
 这种情况下，开发者打算调用show(char const \*)，设计上可能调用了show(0)
 。但是这不起作用，因为0被解析为int，所以show(int)被调用。调用show(NULL)同样也不起作用，因为C++定义NULL为0，而不是((void \*)0)。所以还是会调用show(int)。要解决此类问题，C++标准引入了nullptr关键字来代表0指针。在这个例子中，开发者应该调用show(nullptr)来避免选择错误的函数。nullptr同样可以用来初始化指针变量，如：
 
-;;
+::
 
   int \*ip = nullptr;      // OK
   int value = nullptr;    // error: value is no pointer
