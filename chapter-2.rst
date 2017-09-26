@@ -198,7 +198,7 @@ C++是一个门特别的语言，但并不是所有编程问题的解决方案�
 
 享受C++的旅程，祝你好运。
 
-2.4：什么是面向对象编程？
+_`2.4：什么是面向对象编程？`
 -------------------------
 
 面向对象（和基于对象）编程提供了一个与C编程所使用的模型稍微不同的方法。在C中，解决问题用“过程方法”：一个问题分解为自问体，然后重复分解，直到子任务可以进行编码。因此，要创建一大堆函数，彼此通过参数或变量（全局，局部或静态）交互。
@@ -410,7 +410,7 @@ C++中，定义函数时可以给函数提供默认参数。当开发者没有�
 
 ;;
 
-  int *ip = nullptr;      // OK
+  int \*ip = nullptr;      // OK
   int value = nullptr;    // error: value is no pointer
 
 2.5.7：void参数列表
@@ -492,9 +492,245 @@ C++中，定义函数时可以给函数提供默认参数。当开发者没有�
 
 用这种方式初始化，一个普通的C头文件用extern "C" {}包含起来。{出现在最开始，}出现在文件的底部。#ifdef指令检测结合的类型：C或C++。标准的C头文件，例如stdio.h內建这种方式，因此可以被C和C++使用。
 
+此外，C++头文件应该支持包含保护。在C++中，通常不希望在源文件中两次包含同一个头文件。要避免重复包含，可以在头文件中使用#ifndef指令。例如：
 
+::
 
-_`2.5.14`
-`````````
+  #ifndef MYHEADER_H_
+  #define MYHEADER_H_
+      // declarations of the header file is inserted here,
+      // using #ifdef __cplusplus etc. directives
+  #endif
 
+当预处理器第一次处理该文件时，还没有定义MYHEADER_H_符号还未定义。#ifndef条件生效，所有的声明都被处理，同时定义了MYHEADER_H_。
+
+当再次处理该头文件时，MYHEADER_H_符号已经定义，因此在#ifndef和#endif指令之间的所有内容都被忽略。
+
+在这种情况下，MYHEADER_H_只是起到一个标识的作用。可以使用头文件的大写的文件名作为该标识，然后把点换成下划线。
+
+除了这些，通常c的头文件是.h扩展名，C++头文件没有扩展名。例如，包含iostream头文件后，可以使用标准流中的cin，cout和cerr，而不是包含iostream.h。本文当遵循这个约定，但也不是每处都这样。
+
+关于头文件，还有更多要讨论的。 `7.11 <chapter-7.rst#classheader>`_ 会深入讨论C++最佳的头文件组织行时。
+
+2.5.11：定义局部变量
+````````````````````
+
+尽管C语言中已经提供，但局部变量应该只有到使用的时候才定义（译注：原文中的说的C太老了，现在也可以做到）。相比于在复合语句前定义变量，虽然会有点不习惯，但是最终你会发现，它会增强代码的可读性，可维护性，并且更加有效率。我们建议在定义局部变量时，遵循下列规则：
+
+* 局部变量应该在合适的位置创建，如前面的例子。不仅仅适用于for语句，同样适用于所有仅仅只是半路需要一个变量的地方。
+
+* 一般而言，变量的作用于应该尽可能的小，更加的局部化。 When avoidable local variables are not defined at the beginning of functions but rather where they're first used.
+
+* 避免使用全局变量认为是一个好的习惯。很容易搞乱一个变量是用来做什么的。 In C++ global variables are seldom required, and by localizing variables the well known phenomenon of using the same variable for multiple purposes, thereby invalidating each individual purpose of the variable, can easily be prevented.
+
+If considered appropriate, nested blocks can be used to localize auxiliary variables. However, situations exist where local variables are considered appropriate inside nested statements. The just mentioned for statement is of course a case in point, but local variables can also be defined within the condition clauses of if-else statements, within selection clauses of switch statements and condition clauses of while statements. Variables thus defined are available to the full statement, including its nested statements. For example, consider the following switch statement: 
+
+::
+
+  #include <stdio.h>
+
+  int main()
+  {
+      switch (int c = getchar())
+      {
+          case 'a':
+          case 'e':
+          case 'i':
+          case 'o':
+          case 'u':
+              printf("Saw vowel %c\n", c);
+          break;
+
+          case EOF:
+              printf("Saw EOF\n");
+          break;
+
+          case '0' ... '9':
+              printf("Saw number character %c\n", c);
+          break;
+
+          default:
+              printf("Saw other character, hex value 0x%2x\n", c);
+      }
+  }
+
+注意变量c定义的位置：是在switch语句的表达式中定义的。这意味着c只对switch语句自身可见，包括内部的嵌套的语句（子语句），但是外面的区域是不可见的。
+
+同样，也可以在if和while语句中使用这个方法：在if和while语句的条件表达式部分定义的变量，只对他们的嵌套的语句可见。不过，有一些额外说明：
+
+* 定义的变量必须是初始化为数字或者逻辑值的变量
+* 定义的变量不能嵌套在一个复杂的表达式之中（如使用了括号）
+
+后面这条很好理解：if和while语句的表达式求值结果必须是一个逻辑值，值必须可以解释为0或非0的值。通常，这没什么问题，但是C++对象（像std::string）通常由函数返回。这样的对象可能也可能不会解释为数值类型的值。如果不是的化（还是拿std::string举例），那么这个变量就不能在条件语句和循环语句的条件表达式里定义。下面的例子是编译不通过的：
+
+::
+
+  if (std::string myString = getString())     // assume getString returns
+  {                                           // a std::string value
+      // process myString
+  }
+
+上面这个例子需要说明一下。我们经常会需要一个局部，然后立即在其初始化后对其测试。初始化和测试不能同时川县在一个表达式中。需要用两个嵌套语句。因此，下面的代码也不会编译：
+
+::
+
+  if ((int c = getchar()) && strchr("aeiou", c))
+      printf("Saw a vowel\n");
+
+如果遇到这种情况，或者使用两个嵌套语句，或者用一个嵌套复合语句局部化int c：
+
+::
+
+  if (int c = getchar())             // nested if-statements
+      if (strchr("aeiou", c))
+          printf("Saw a vowel\n");
+
+  {                                  // nested compound statement
+      int c = getchar();
+      if (c && strchr("aeiou", c))
+         printf("Saw a vowel\n");
+  }
+
+2.5.12：typedef关键字
+`````````````````````
+
+C++中仍可以使用typedef，但在定义union，struct或enum时就不必要使用了。例如下面的代码：
+
+::
+
+  struct SomeStruct
+  {
+      int     a;
+      double  d;
+      char    string[80];
+  };
+
+当要定义一个struct，union或其他复合类型的变量时，类型的标签可以用作类型的名字使用（上面例子中定义的SomeStruct）：
+
+::
+
+  SomeStruct what;
+
+  what.d = 3.1415;
+
+2.5.13：函数可以作为结构体的成员
+````````````````````````````````
+
+C++中，可以将函数定义为结构体成员。下面，我们就遇到了第一个具体的对象的例子：如之前讲述（ `2.4 <>`_ ），对象是一个包含数据的结构，有专门的函数用来操作这些数据。
+
+点Point的struct可以用下面的代码定义。在这个结构中，声明了两个整形的数据成员和一个函数draw。
+
+::
+
+  struct Point            // definition of a screen-dot
+  {
+      int x;              // coordinates
+      int y;              // x/y
+      void draw();        // drawing function
+  };
+
+在绘图软件中，还可以定义一个类似的结构来代表一个像素。对于这个结构，应该注意：
+
+* draw函数仅仅是申明。实际的函数定义应该在别的地方（结构体中的函数会在 `3.2 <chapter-2.rst#functionsinstructs>`_ 中进一步讨论）。
+
+* Point结构的大小等于两个int的大小。在结构体内生灵函数不会影响到它的大小。编译器会实现只有在Point的上下文中才可使用draw函数。
+
+Point结构可以如下使用：
+
+::
+
+  Point a;                // two points on
+  Point b;                // the screen
+
+  a.x = 0;                // define first dot
+  a.y = 10;               // and draw it
+  a.draw();
+
+  b = a;                  // copy a to b
+  b.y = 20;               // redefine y-coord
+  b.draw();               // and draw it
+
+如上例所示，结构体中的函数可以通过点（.）来选择（箭头（->）操作符使用在对象的指针上）。和选择数据域成员的方式一样。
+
+使用这样的语法是处于不同的类型可以有相同的函数名称。例如一个代表园的结构体可能包含3个int值：两个代表坐标，一个代表半径。和Point结构类似，圆Circle结构体也可以有一个draw函数。
+
+_`2.5.14：C++17标准引入的特性`
+``````````````````````````````
+
+C++17（也称为C++1z）标准会在下个Gnu g++的主板本中实现（7.0.0或之后）。
+
+标准的工作草案是免费的，可以通过克隆这个git源获取： https://github.com/cplusplus/draft.git 。
+
+C++注解会及时反馈出与C++17标准相关的改变。在本文当中有季节已经设计C++17标准。在表格目录或者索引中可以找到C++17的入口。
+
+除了在各个章节中提到的，C++17标准还引入龄下面的特性：
+
+**Evaluation order of operands of operators**
+
+Up to C++17, the evaluation order of expressions of operands of binary operators is, except for the boolean operators and and or, not defined. C++17 changes this for postfix expressions, assignment expressions (including compound assignments), and shift operators: 
+
+* Postfix expressions (like index operators and member selectors) are evaluated from left to right;
+* Assignment expressions are evaluated from right to left;
+* Operands of shift operators are evaluated from left to right. 
+
+::
+
+  first.second
+  fourth += third = second += first
+  first << second << third << fourth
+  first >> second >> third >> fourth
+
+In addition, when overloading an operator, the function implementing the overloaded operator is evaluated like the built-in operator it overloads, and not in the way function calls are generally ordered. 
+
+**[[fallthrough]]**
+
+ When statements that are nested under case entries in switch statements continue into subsequent case or default entries the compiler will issue a 'falling through' warning. If falling through is intentional the attribute [[fallthrough]] should be used. Here is an annotated example: 
+
+::
+
+  void function(int selector)
+  {
+      switch (selector)
+      {
+          case 1:
+          case 2:             // no falling through, but merged entry points
+              cout << "cases 1 and 2\n";
+          [[fallthrough]];
+          case 3:
+              cout << "case 3\n";
+  
+          case 4:             // a warning is issued
+              cout << "case 4\n";
+          [[fallthrough]];    // error: nothing beyond
+      }
+  }
+
+**[[maybe_unused]]**
+
+This attribute can be applied to a class, typedef-name, variable, non-static data member, a function, an enumeration or an enumerator. When it is applied to an entity no warning is generated when the entity is not used. Example: 
+
+::
+
+  void fun([[maybe_unused]] size_t argument)
+  {
+      // argument isn't used, but no warning 
+      // telling you so is issued
+  }
+
+**[[nodiscard]]**
+
+The attribute [[nodiscard]] may be specified when declaring a function, class or enumeration. If a function is declared [[nodiscard]] or if a function returns an entity previously declared using [[nodiscard]] then the return value of such a function may only be ignored when explicitly cast to void. Otherwise, when the return value is not used a warning is issued. Example: 
+
+::
+
+  int [[nodiscard]] importantInt();
+  struct [[nodiscard]] ImportantStruct { ... };
+  
+  ImportantStruct factory();
+    
+  int main()
+  {
+      importantInt();         // warning issued
+      factory();              // warning issued
+  }
 
