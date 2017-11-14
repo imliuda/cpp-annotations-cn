@@ -96,3 +96,60 @@ string支持如下的功能：
 
 5.2：std::string参考
 --------------------
+
+本节讲解字符串成员函数和相关运算符。下面的各个小节将会分别讲解字符串的初始化，迭代器和成员函数。本节中使用了下列的术语：
+
+* object总是指string对象；
+* 参数总是string const &或char const \*类型，除非另有说明。处理参数的操作不会修改参数的内容；
+* opos指对一个string对象的偏移量；
+* apos值对参数的偏移量；
+* on代表一个字符串对象中字符的个数（从opos开始）；
+* an代表参数中字符的个数（从apos开始）；
+
+opos和apos都必须指向已经存在的偏移量，否则会产生异常（ `10 <chapter-10.rst>` _）。相比，an和on可以超出可用的字符个数，在这种情况下，只考虑可用的字符。
+
+许多成员函数对on，an和apos定义了默认的值。默认的偏移量是0，默认的on和an是string::npos，该值可以解释为“达到字符串末尾所需要的字符个数”。
+
+对于从字符串末尾执行反向操作的成员函数，opos的默认值是最后一个字符的索引值，在默认情况下等于opos+1，代表在opos处结束的子字符串的长度。
+
+在下面给出的成员函数的概述中，可以假定所有这些参数都接受默认值，除非另有说明。当然，如果函数需要其他参数，而不是接受默认值的参数，则不能使用默认参数值。
+
+Of course, the default argument values cannot be used if a function requires additional arguments beyond the ones otherwise accepting default values. 
+
+Several member functions accept iterators. Section `18.2 <chapter-18.rst#interators>`_ covers the technical aspects of iterators, but these may be ignored at this point without loss of continuity. Like apos and opos, iterators must refer to existing positions and/or to an existing range of characters within the string object's contents.
+
+All string-member functions computing indices return the predefined constant string::npos on failure.
+
+The s literal suffix to indicate that a std::string constant is intended when a string literal (like "hello world") is used. It can be used after declaring using namespace std or, more specific, after declaring using namespace std::literals::string_literals.
+
+When string literals are used when explicitly defining or using std::string objects the s-suffix is hardly ever required, but it may come in handy when using the auto keyword. E.g., auto str = "hello world"s defines std::string str, whereas it would have been a char const * if the literal suffix had been omitted. 
+
+5.2.1：初始化
+*************
+
+在字符串被定义后，能保证它们都处于一个合法的状态。在定义字符串时，可以通过下列的集中方式：可用下面这些字符串构造函数：
+
+* string object：
+
+  定义一个空的字符串。使用这种方式定义字符串不需要参数。
+
+* string object(string::size_type count, char ch)：
+
+  使用count个ch字符初始化。
+
+* string object(string const &argument)：
+
+  使用给定的参数初始化。
+
+* string object(std::string const &argument, string::size_type apos, string::size_type an)：
+
+  用一个指定的字符串对象，在apos起始位置，最多使用an个字符，初始化一个新的字符串。
+
+* string object(InputIterator begin, InputIterator end)：
+
+  使用两个迭代器定义的字符区间内的字符初始化。
+
+5.2.2：迭代器
+*************
+
+迭代器的细节可参考 `18.2 <chapter-18.rst#interators>`_ 。
